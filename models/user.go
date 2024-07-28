@@ -5,6 +5,15 @@ import (
 )
 
 var DB *gorm.DB
+
+type User struct {
+    gorm.Model
+    Username string `json:"username"`
+    Password string `json:"password"`
+    Role     string `json:"role"`
+}
+
+
 type Customer struct {
     gorm.Model
     Name    string `json:"name"`
@@ -26,9 +35,3 @@ type Payroll struct {
     Status     string  `json:"status"`
 }
 
-type User struct {
-    gorm.Model
-    Username string `json:"username"`
-    Password string `json:"password"`
-    Role     string `json:"role"`
-}
