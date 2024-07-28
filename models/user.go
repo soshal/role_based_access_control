@@ -1,21 +1,34 @@
-// models/user.go
 package models
 
 import (
     "gorm.io/gorm"
 )
 
-type User struct {
+var DB *gorm.DB
+type Customer struct {
     gorm.Model
-    Name     string `json:"name"`
-    Email    string `json:"email"`
-    Password string `json:"password"`
+    Name    string `json:"name"`
+    Email   string `json:"email"`
+    Address string `json:"address"`
 }
 
-
-type Sales struct {
+type Billing struct {
     gorm.Model
-    Name     string `json:"name"`
-    Email    string `json:"email"`
+    CustomerID uint    `json:"customer_id"`
+    Amount     float64 `json:"amount"`
+    Status     string  `json:"status"`
+}
+
+type Payroll struct {
+    gorm.Model
+    EmployeeID uint    `json:"employee_id"`
+    Amount     float64 `json:"amount"`
+    Status     string  `json:"status"`
+}
+
+type User struct {
+    gorm.Model
+    Username string `json:"username"`
     Password string `json:"password"`
+    Role     string `json:"role"`
 }

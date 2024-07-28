@@ -1,89 +1,64 @@
-// handlers/user.go
 package handlers
 
-import (
-    "net/http"
 
-    "github.com/gin-gonic/gin"
-    "daily-api/database"
+import (
     "daily-api/models"
+    "github.com/gin-gonic/gin"
+    "net/http"
 )
 
-func GetUsers(c *gin.Context) {
-    var user []models.User
-	result := database.DB.Find(&user)
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, user)
-}
-
+// CreateUser creates a new user
 func CreateUser(c *gin.Context) {
     var user models.User
     if err := c.ShouldBindJSON(&user); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
     }
-    result := database.DB.Create(&user)
-    if result.Error != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
-        return
-    }
+    models.DB.Create(&user)
     c.JSON(http.StatusOK, user)
 }
 
+// GetUsers gets all users
+func GetUsers(c *gin.Context) {
+    var users []models.User
+    models.DB.Find(&users)
+    c.JSON(http.StatusOK, users)
+}
+
+// GetUser gets a single user by ID
 func GetUser(c *gin.Context) {
     id := c.Param("id")
     var user models.User
-    result := database.DB.First(&user, id)
-    if result.Error != nil {
+    if err := models.DB.First(&user, id).Error; err != nil {
         c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
         return
     }
     c.JSON(http.StatusOK, user)
 }
 
+// UpdateUser updates a user's information
 func UpdateUser(c *gin.Context) {
     id := c.Param("id")
     var user models.User
+    if err := models.DB.First(&user, id).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
+        return
+    }
     if err := c.ShouldBindJSON(&user); err != nil {
         c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
         return
     }
-    result := database.DB.Model(&models.User{}).Where("id = ?", id).Updates(user)
-    if result.Error != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
-        return
-    }
+    models.DB.Save(&user)
     c.JSON(http.StatusOK, user)
 }
 
+// DeleteUser deletes a user
 func DeleteUser(c *gin.Context) {
     id := c.Param("id")
-    result := database.DB.Delete(&models.User{}, id)
-    if result.Error != nil {
-        c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
+    if err := models.DB.Delete(&models.User{}, id).Error; err != nil {
+        c.JSON(http.StatusNotFound, gin.H{"error": "User not found"})
         return
     }
     c.JSON(http.StatusOK, gin.H{"message": "User deleted"})
 }
 
-
-func CreateSales (c *gin.Context){
-	var sales []models.Sales 
-
-	if err := c.ShouldBindJSON(&sales); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-	result := database.DB.Create(&sales)
-	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": result.Error.Error()})
-		return
-	}
-	c.JSON(http.StatusOK, gin.H{"message": "Sales created"})
-
-
-
-}
