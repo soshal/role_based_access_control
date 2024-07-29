@@ -14,7 +14,9 @@ var jwtSecret = []byte("your_secret_key")
 
 // GenerateToken generates a JWT token
 func GenerateToken(user models.User) (string, error) {
-    token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+    
+	//jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{...}): Creates a new JWT token with the specified claims.
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
         "username": user.Username,
         "role":     user.Role,
         "exp":      jwt.TimeFunc().Add(time.Hour * 72).Unix(),
