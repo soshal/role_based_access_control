@@ -2,6 +2,7 @@ package main
 
 import (
     "daily-api/handlers"
+    "daily-api/middleware"
     "daily-api/models"
     "github.com/gin-gonic/gin"
     "gorm.io/driver/postgres"
@@ -22,33 +23,39 @@ func main() {
 
     r := gin.Default()
 
-    // Customer routes
-    r.POST("/customers", handlers.CreateCustomer)
-    r.GET("/customers", handlers.GetCustomers)
-    r.GET("/customers/:id", handlers.GetCustomer)
-    r.PUT("/customers/:id", handlers.UpdateCustomer)
-    r.DELETE("/customers/:id", handlers.DeleteCustomer)
-
-    // Billing routes
-    r.POST("/billings", handlers.CreateBilling)
-    r.GET("/billings", handlers.GetBillings)
-    r.GET("/billings/:id", handlers.GetBilling)
-    r.PUT("/billings/:id", handlers.UpdateBilling)
-    r.DELETE("/billings/:id", handlers.DeleteBilling)
-
-    // Payroll routes
-    r.POST("/payrolls", handlers.CreatePayroll)
-    r.GET("/payrolls", handlers.GetPayrolls)
-    r.GET("/payrolls/:id", handlers.GetPayrolls)
-    r.PUT("/payrolls/:id", handlers.UpdatePayroll)
-    r.DELETE("/payrolls/:id", handlers.DeletePayroll)
-
     // User routes
     r.POST("/users", handlers.CreateUser)
-    r.GET("/users", handlers.GetUsers)
-    r.GET("/users/:id", handlers.GetUser)
-    r.PUT("/users/:id", handlers.UpdateUser)
-    r.DELETE("/users/:id", handlers.DeleteUser)
+    r.POST("/login", handlers.Login)
+
+    auth := r.Group("/")
+    auth.Use(middleware.AuthMiddleware())
+
+    // Customer routes with role-based access control
+    auth.POST("/customers", middleware.RoleMiddleware("sales"), handlers.CreateCustomer)
+    auth.GET("/customers", middleware.RoleMiddleware("sales", "account", "hr", "admin"), handlers.GetCustomers)
+    auth.GET("/customers/:id", middleware.RoleMiddleware("sales", "account", "hr", "admin"), handlers.GetCustomer)
+    auth.PUT("/customers/:id", middleware.RoleMiddleware("sales"), handlers.UpdateCustomer)
+    auth.DELETE("/customers/:id", middleware.RoleMiddleware("sales"), handlers.DeleteCustomer)
+
+    // Billing routes with role-based access control
+    auth.POST("/billings", middleware.RoleMiddleware("sales"), handlers.CreateBilling)
+    auth.GET("/billings", middleware.RoleMiddleware("sales", "account"), handlers.GetBillings)
+    auth.GET("/billings/:id", middleware.RoleMiddleware("sales", "account"), handlers.GetBilling)
+    auth.PUT("/billings/:id", middleware.RoleMiddleware("sales"), handlers.UpdateBilling)
+    auth.DELETE("/billings/:id", middleware.RoleMiddleware("sales"), handlers.DeleteBilling)
+
+    // Payroll routes with role-based access control
+    auth.POST("/payrolls", middleware.RoleMiddleware("hr"), handlers.CreatePayroll)
+    auth.GET("/payrolls", middleware.RoleMiddleware("account", "hr"), handlers.GetPayrolls)
+    auth.GET("/payrolls/:id", middleware.RoleMiddleware("account", "hr"), handlers.GetPayrolls)
+    auth.PUT("/payrolls/:id", middleware.RoleMiddleware("hr"), handlers.UpdatePayroll)
+    auth.DELETE("/payrolls/:id", middleware.RoleMiddleware("hr"), handlers.DeletePayroll)
+
+    // User routes with role-based access control
+    auth.GET("/users", middleware.RoleMiddleware("admin"), handlers.GetUsers)
+    auth.GET("/users/:id", middleware.RoleMiddleware("admin"), handlers.GetUser)
+    auth.PUT("/users/:id", middleware.RoleMiddleware("admin"), handlers.UpdateUser)
+    auth.DELETE("/users/:id", middleware.RoleMiddleware("admin"), handlers.DeleteUser)
 
     r.Run(":8080")
 }

@@ -1,7 +1,7 @@
 package handlers
 
-
 import (
+    "daily-api/middleware"
     "daily-api/models"
     "github.com/gin-gonic/gin"
     "net/http"
@@ -16,6 +16,32 @@ func CreateUser(c *gin.Context) {
     }
     models.DB.Create(&user)
     c.JSON(http.StatusOK, user)
+}
+
+// Login logs in a user
+func Login(c *gin.Context) {
+    var loginData struct {
+        Username string `json:"username"`
+        Password string `json:"password"`
+    }
+    if err := c.ShouldBindJSON(&loginData); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+    var user models.User
+    if err := models.DB.Where("username = ? AND password = ?", loginData.Username, loginData.Password).First(&user).Error; err != nil {
+        c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid username or password"})
+        return
+    }
+
+    token, err := middleware.GenerateToken(user)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{"error": "Could not generate token"})
+        return
+    }
+
+    c.JSON(http.StatusOK, gin.H{"token": token})
 }
 
 // GetUsers gets all users
@@ -61,4 +87,3 @@ func DeleteUser(c *gin.Context) {
     }
     c.JSON(http.StatusOK, gin.H{"message": "User deleted"})
 }
-
