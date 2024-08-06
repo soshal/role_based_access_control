@@ -24,16 +24,15 @@ func main() {
     r := gin.Default()
 
     // User routes
-    r.POST("/users", handlers.CreateUser)
+    r.POST("/register", handlers.Register)
     r.POST("/login", handlers.Login)
-
     auth := r.Group("/")
     auth.Use(middleware.AuthMiddleware())
 
     // Customer routes with role-based access control
     auth.POST("/customers", middleware.RoleMiddleware("sales"), handlers.CreateCustomer)
-    auth.GET("/customers", middleware.RoleMiddleware("sales", "account", "hr", "admin"), handlers.GetCustomers)
-    auth.GET("/customers/:id", middleware.RoleMiddleware("sales", "account", "hr", "admin"), handlers.GetCustomer)
+    auth.GET("/customers", middleware.RoleMiddleware("sales", "account"), handlers.GetCustomers)
+    auth.GET("/customers/:id", middleware.RoleMiddleware("sales", "account"), handlers.GetCustomer)
     auth.PUT("/customers/:id", middleware.RoleMiddleware("sales"), handlers.UpdateCustomer)
     auth.DELETE("/customers/:id", middleware.RoleMiddleware("sales"), handlers.DeleteCustomer)
 
@@ -46,13 +45,13 @@ func main() {
 
     // Payroll routes with role-based access control
     auth.POST("/payrolls", middleware.RoleMiddleware("hr"), handlers.CreatePayroll)
-    auth.GET("/payrolls", middleware.RoleMiddleware("account", "hr"), handlers.GetPayrolls)
-    auth.GET("/payrolls/:id", middleware.RoleMiddleware("account", "hr"), handlers.GetPayrolls)
+    auth.GET("/payrolls", middleware.RoleMiddleware("hr", "account"), handlers.GetPayrolls)
+    auth.GET("/payrolls/:id", middleware.RoleMiddleware("hr", "account"), handlers.GetPayrolls)
     auth.PUT("/payrolls/:id", middleware.RoleMiddleware("hr"), handlers.UpdatePayroll)
     auth.DELETE("/payrolls/:id", middleware.RoleMiddleware("hr"), handlers.DeletePayroll)
 
     // User routes with role-based access control
-    auth.GET("/users", middleware.RoleMiddleware("admin"), handlers.GetUsers)
+    auth.GET("/users", middleware.RoleMiddleware("admin", "hr"), handlers.GetUsers)
     auth.GET("/users/:id", middleware.RoleMiddleware("admin"), handlers.GetUser)
     auth.PUT("/users/:id", middleware.RoleMiddleware("admin"), handlers.UpdateUser)
     auth.DELETE("/users/:id", middleware.RoleMiddleware("admin"), handlers.DeleteUser)

@@ -28,22 +28,23 @@ func GenerateToken(user models.User) (string, error) {
     return tokenString, nil
 }
 
-// AuthMiddleware authenticates the JWT token
 func AuthMiddleware() gin.HandlerFunc {
     return func(c *gin.Context) {
         authHeader := c.GetHeader("Authorization")
         if authHeader == "" {
-            c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is missing"})
+            c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization header is required"})
             c.Abort()
             return
         }
 
-        tokenString := strings.Split(authHeader, "Bearer ")[1]
+        tokenString := strings.TrimSpace(strings.TrimPrefix(authHeader, "Bearer"))
+
         token, err := jwt.Parse(tokenString, func(token *jwt.Token) (interface{}, error) {
+            // Make sure that the token method conforms to "SigningMethodHMAC"
             if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
                 return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
             }
-            return jwtSecret, nil
+            return []byte("secret"), nil
         })
 
         if err != nil || !token.Valid {
@@ -52,38 +53,45 @@ func AuthMiddleware() gin.HandlerFunc {
             return
         }
 
-        claims, ok := token.Claims.(jwt.MapClaims)
-        if !ok {
+        // Optionally, you can set user information in the context
+        if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+            c.Set("userID", claims["id"])
+            c.Set("userRole", claims["role"])
+        } else {
             c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid token claims"})
             c.Abort()
             return
         }
 
-        c.Set("username", claims["username"])
-        c.Set("role", claims["role"])
         c.Next()
     }
 }
 
-// RoleMiddleware authorizes based on user role
+
+
 func RoleMiddleware(roles ...string) gin.HandlerFunc {
     return func(c *gin.Context) {
-        role, exists := c.Get("role")
+        userRole, exists := c.Get("userRole")
         if !exists {
-            c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
+            c.JSON(http.StatusForbidden, gin.H{"error": "No role found in token"})
             c.Abort()
             return
         }
 
-        userRole := role.(string)
-        for _, r := range roles {
-            if userRole == r {
-                c.Next()
-                return
+        roleValid := false
+        for _, role := range roles {
+            if userRole == role {
+                roleValid = true
+                break
             }
         }
 
-        c.JSON(http.StatusForbidden, gin.H{"error": "Forbidden"})
-        c.Abort()
+        if !roleValid {
+            c.JSON(http.StatusForbidden, gin.H{"error": "You don't have permission to access this resource"})
+            c.Abort()
+            return
+        }
+
+        c.Next()
     }
 }
