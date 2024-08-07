@@ -25,6 +25,7 @@ func CreateUser(c *gin.Context) {
     c.JSON(http.StatusOK, user)
 }
 
+
 func Login(c *gin.Context) {
     var input models.User
     if err := c.ShouldBindJSON(&input); err != nil {
