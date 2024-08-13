@@ -6,6 +6,9 @@ import (
     "net/http"
 )
 
+
+
+
 // CreateCustomer creates a new customer
 func CreateCustomer(c *gin.Context) {
     var customer models.Customer
